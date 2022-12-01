@@ -4,7 +4,8 @@ body {
 	height: 100vh;
 	background-color: #222;
 }
-canvas#canvas {
+canvas#video_canvas,
+canvas#draw_canvas {
 	position: fixed;
 	left: 0;
 	top: 0;
