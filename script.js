@@ -1,3 +1,4 @@
+//** Draw the tracking effect */
 const drawCanvas = document.querySelector("#draw_canvas");
 const drawCtx = drawCanvas.getContext("2d");
 
@@ -99,14 +100,13 @@ class Ball {
 	}
 }
 
+//** Hand tracking using Mediapipe HandLandmarks*/
 const videoElement = document.querySelector("#input_video");
 const videoCanvas = document.querySelector("#video_canvas");
 const videoCtx = videoCanvas.getContext("2d");
 
 videoWidth = videoCanvas.width;
 videoHeight = videoCanvas.height;
-
-console.log(window.innerWidth, window.innerHeight);
 
 function onResults(results) {
 	videoCtx.save();
