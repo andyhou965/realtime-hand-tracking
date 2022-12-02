@@ -1,62 +1,10 @@
-const videoElement = document.querySelector("#input_video");
-const videoCanvas = document.querySelector("#video_canvas");
-const videoCtx = videoCanvas.getContext("2d");
-
-function onResults(results) {
-	videoCtx.save();
-	videoCtx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
-	videoCtx.drawImage(
-		results.image,
-		0,
-		0,
-		videoCanvas.width,
-		videoCanvas.height
-	);
-	if (results.multiHandLandmarks) {
-		for (const landmarks of results.multiHandLandmarks) {
-			drawConnectors(videoCtx, landmarks, HAND_CONNECTIONS, {
-				color: "#00FF00",
-				lineWidth: 5,
-			});
-			drawLandmarks(videoCtx, landmarks, {
-				color: "#FF0000",
-				lineWidth: 2,
-			});
-		}
-	}
-	videoCtx.restore();
-}
-
-const hands = new Hands({
-	locateFile: (file) => {
-		return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-	},
-});
-hands.setOptions({
-	maxNumHands: 2,
-	modelComplexity: 1,
-	minDetectionConfidence: 0.5,
-	minTrackingConfidence: 0.5,
-	selfieMode: true,
-});
-hands.onResults(onResults);
-
-const camera = new Camera(videoElement, {
-	onFrame: async () => {
-		await hands.send({ image: videoElement });
-	},
-	width: 1920,
-	height: 1080,
-});
-camera.start();
-
 const drawCanvas = document.querySelector("#draw_canvas");
 const drawCtx = drawCanvas.getContext("2d");
 
 let w,
 	h,
 	balls = [];
-let mouse = {
+let finger = {
 	x: undefined,
 	y: undefined,
 };
@@ -103,20 +51,6 @@ function drawBalls() {
 	}
 }
 
-function mousemove(e) {
-	mouse.x = e.x;
-	mouse.y = e.y;
-
-	for (let i = 0; i < 3; i++) {
-		balls.push(new Ball());
-	}
-}
-
-function mouseout() {
-	mouse.x = undefined;
-	mouse.y = undefined;
-}
-
 function getRandomInt(min, max) {
 	return Math.round(Math.random() * (max - min)) + min;
 }
@@ -128,8 +62,8 @@ function easeOutQuart(x) {
 class Ball {
 	constructor() {
 		this.start = {
-			x: mouse.x + getRandomInt(-20, 20),
-			y: mouse.y + getRandomInt(-20, 20),
+			x: finger.x + getRandomInt(-20, 20),
+			y: finger.y + getRandomInt(-20, 20),
 			size: getRandomInt(30, 40),
 		};
 		this.end = {
@@ -165,7 +99,66 @@ class Ball {
 	}
 }
 
+const videoElement = document.querySelector("#input_video");
+const videoCanvas = document.querySelector("#video_canvas");
+const videoCtx = videoCanvas.getContext("2d");
+
+videoWidth = videoCanvas.width;
+videoHeight = videoCanvas.height;
+
+console.log(window.innerWidth, window.innerHeight);
+
+function onResults(results) {
+	videoCtx.save();
+	videoCtx.clearRect(0, 0, videoWidth, videoHeight);
+	videoCtx.drawImage(results.image, 0, 0, videoWidth, videoHeight);
+	if (results.multiHandLandmarks) {
+		for (const landmarks of results.multiHandLandmarks) {
+			INDEX_FINGER_TIP = landmarks[8];
+			finger.x = INDEX_FINGER_TIP.x * w;
+			finger.y = INDEX_FINGER_TIP.y * h;
+
+			for (let i = 0; i < 3; i++) {
+				balls.push(new Ball());
+			}
+
+			// drawConnectors(videoCtx, landmarks, HAND_CONNECTIONS, {
+			// 	color: "#00FF00",
+			// 	lineWidth: 5,
+			// });
+			// drawLandmarks(videoCtx, landmarks, {
+			// 	color: "#FF0000",
+			// 	lineWidth: 2,
+			// });
+		}
+	}
+	finger.x = undefined;
+	finger.y = undefined;
+	videoCtx.restore();
+}
+
+const hands = new Hands({
+	locateFile: (file) => {
+		return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+	},
+});
+hands.setOptions({
+	maxNumHands: 2,
+	modelComplexity: 1,
+	minDetectionConfidence: 0.5,
+	minTrackingConfidence: 0.5,
+	selfieMode: true,
+});
+hands.onResults(onResults);
+
+const camera = new Camera(videoElement, {
+	onFrame: async () => {
+		await hands.send({ image: videoElement });
+	},
+	width: videoWidth,
+	height: videoHeight,
+});
+camera.start();
+
 window.addEventListener("DOMContentLoaded", init);
 window.addEventListener("resize", resizeReset);
-window.addEventListener("mousemove", mousemove);
-window.addEventListener("mouseout", mouseout);
